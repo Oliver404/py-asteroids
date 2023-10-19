@@ -1,9 +1,7 @@
 import pygame, sys, os, random, math
 from pygame.locals import *
-from gasteroid import GAsteroid
-# from gclases import Asteroid
-# gclases.
-# Asteroid(1,2,4,5)
+from gobjects import *
+
 pygame.init()
 fps = pygame.time.Clock()
 
@@ -19,6 +17,7 @@ WIDTH = 800
 HEIGHT = 600
 current_speed = 7
 time = 0
+DISTANCE_COLLISION = 27
 # Globals for SHIP
 ship_x = WIDTH / 2 - 50
 ship_y = HEIGHT / 2 - 50
@@ -31,6 +30,7 @@ ship_direction = -1
 # Globals for ASTEROIDs
 asteroids = []
 asteroid_speed = 2
+time_create_asteroid = 21
 
 # Canvas declaration
 window = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32 )
@@ -41,6 +41,7 @@ pygame.display.set_caption('Asteroids')
 # debris = pygame.image.load(os.path.join('images', 'debris2_brown.png'))
 ship = pygame.image.load(os.path.join('assets', 'img', 'sun.png'))
 planet = pygame.image.load(os.path.join('assets', 'img', 'planet.png'))
+star = pygame.image.load(os.path.join('assets', 'img', 'star.png'))
 
 def rot_center(image, angle):
     orig_rect = image.get_rect()
@@ -101,25 +102,44 @@ def move_ship():
         if ship_moving == False:
             ship_speed = ship_speed - .1
 
-def create_asteroid():
-    # pass
-    if time % 10 == 0 and time > 0:
-        ast = GAsteroid(random(0, WIDTH), random(0, HEIGHT), random(0, 365), asteroid_speed)
-        asteroids.append(ast)
+def is_collision(x1, y1, x2, y2):
+    distance = math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
+    
+    return distance < DISTANCE_COLLISION
 
-def move_asteroids():
+def create_asteroid():
+    if time % time_create_asteroid == 0 and time > 0:
+        asteroid = Asteroid(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(0, 365), asteroid_speed)
+        asteroids.append(asteroid)
+
+def controll_asteroids():
+    create_asteroid()
+
     for i in range(0, len(asteroids)):
-        asteroids[i].x = (asteroids[i].x + math.cos(math.radians(asteroids[i].angle)) * asteroids[i].speed)
-        asteroids[i].y = (asteroids[i].y - math.sin(math.radians(asteroids[i].angle)) * asteroids[i].speed)
+        asteroids[i].move()
+
+        if (asteroids[i].y > HEIGHT + 100):
+            asteroids[i].y = 0
+        elif (asteroids[i].y < 0 - 100):
+            asteroids[i].y = HEIGHT
+
+        if (asteroids[i].x > WIDTH + 100):
+            asteroids[i].x = 0
+        elif (asteroids[i].x < 0 - 100):
+            asteroids[i].x = WIDTH
+
+        if is_collision(asteroids[i].x, asteroids[i].y, ship_x, ship_y):
+            print("GAME OVER")
+            # exit()
 
 def game_logic():
     move_ship()
-    create_asteroid()
-    move_asteroids()
+    controll_asteroids()
 
 def update_screen():
     pygame.display.update()
     fps.tick(60)
+
 
 # Asteroids game loop
 while True:
