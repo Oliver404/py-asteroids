@@ -1,6 +1,7 @@
 import pygame, sys, os, random, math
 from pygame.locals import *
 from gobjects import *
+from const import *
 
 pygame.init()
 fps = pygame.time.Clock()
@@ -13,20 +14,16 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 
 # Globals
-WIDTH = 800
-HEIGHT = 600
 current_speed = 7
 time = 0
-DISTANCE_COLLISION = 27
+
 # Globals for SHIP
-ship_x = WIDTH / 2 - 50
-ship_y = HEIGHT / 2 - 50
-ship_angle = 0
+ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50)
 ship_rotation_speed = 7
 ship_rotaiting = False
-ship_speed = 0
 ship_moving = False
 ship_direction = -1
+
 # Globals for ASTEROIDs
 asteroids = []
 asteroid_speed = 2
@@ -39,7 +36,7 @@ pygame.display.set_caption('Asteroids')
 # Load images
 # bg = pygame.image.load(os.path.join('images', 'bg.jpg'))
 # debris = pygame.image.load(os.path.join('images', 'debris2_brown.png'))
-ship = pygame.image.load(os.path.join('assets', 'img', 'sun.png'))
+ship_sprite = pygame.image.load(os.path.join('assets', 'img', 'sun.png'))
 planet = pygame.image.load(os.path.join('assets', 'img', 'planet.png'))
 star = pygame.image.load(os.path.join('assets', 'img', 'star.png'))
 
@@ -63,11 +60,11 @@ def draw(canvas):
     for i in range(0, len(asteroids)):
         canvas.blit(rot_center(planet, asteroids[i].angle), ( asteroids[i].x, asteroids[i].y))
 
-    canvas.blit(rot_center(ship, ship_angle), ( ship_x, ship_y))
+    canvas.blit(rot_center(ship_sprite, ship.angle), (ship.x, ship.y))
     
 
 def handle_input():
-    global ship_angle, ship_rotaiting, ship_direction, ship_moving, ship_speed
+    global ship, ship_rotaiting, ship_direction, ship_moving
 
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -83,7 +80,7 @@ def handle_input():
                 ship_direction = -1
             elif event.key == K_UP:
                 ship_moving = True
-                ship_speed = current_speed
+                ship.speed = current_speed
 
         elif event.type == KEYUP:
             if event.key == K_LEFT or event.key == K_RIGHT:
@@ -92,15 +89,15 @@ def handle_input():
                 ship_moving = False
 
 def move_ship():
-    global ship_angle, ship_x, ship_y, ship_speed
+    global ship
     
     if (ship_rotaiting):
-        ship_angle = ship_angle + ship_direction * ship_rotation_speed
-    if (ship_moving or ship_speed > 0):
-        ship_x = (ship_x + math.cos(math.radians(ship_angle)) * ship_speed)
-        ship_y = (ship_y - math.sin(math.radians(ship_angle)) * ship_speed)
+        ship.angle = ship.angle + ship_direction * ship_rotation_speed
+    if (ship_moving or ship.speed > 0):
+        ship.x = (ship.x + math.cos(math.radians(ship.angle)) * ship.speed)
+        ship.y = (ship.y - math.sin(math.radians(ship.angle)) * ship.speed)
         if ship_moving == False:
-            ship_speed = ship_speed - .1
+            ship.speed = ship.speed - .1
 
 def is_collision(x1, y1, x2, y2):
     distance = math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
@@ -128,7 +125,7 @@ def controll_asteroids():
         elif (asteroids[i].x < 0 - 100):
             asteroids[i].x = WIDTH
 
-        if is_collision(asteroids[i].x, asteroids[i].y, ship_x, ship_y):
+        if is_collision(asteroids[i].x, asteroids[i].y, ship.x, ship.y):
             print("GAME OVER")
             # exit()
 
