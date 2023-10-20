@@ -2,9 +2,11 @@ import pygame, sys, os, random, math
 from pygame.locals import *
 from gobjects import *
 from const import *
+from gmanager import GManager
 
 pygame.init()
 fps = pygame.time.Clock()
+GAME_MANAGER = GManager()
 
 #Colors
 WHITE = (255, 255, 255)
@@ -14,15 +16,12 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 
 # Globals
+score = 0
 current_speed = 7
 time = 0
 
 # Globals for SHIP
-ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50)
-ship_rotation_speed = 7
-ship_rotaiting = False
-ship_moving = False
-ship_direction = -1
+ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50, SHIP_SIZE, 0, ROTATION_SPEED)
 
 # Globals for ASTEROIDs
 asteroids = []
@@ -39,6 +38,12 @@ pygame.display.set_caption('Asteroids')
 ship_sprite = pygame.image.load(os.path.join('assets', 'img', 'sun.png'))
 planet = pygame.image.load(os.path.join('assets', 'img', 'planet.png'))
 star = pygame.image.load(os.path.join('assets', 'img', 'star.png'))
+fire = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'img', 'fire.png')), (10, 10))
+
+title = pygame.font.SysFont('Consolas', 96, True)
+write = pygame.font.SysFont('Consolas', 24, True)
+
+label_title = title.render("ASTEROIDS".format(score), 1, GREEN)
 
 def rot_center(image, angle):
     orig_rect = image.get_rect()
@@ -49,6 +54,19 @@ def rot_center(image, angle):
     
     return rot_image
 
+def start_screen(canvas):
+    canvas.blit(label_title, (WIDTH / 2 - label_title.get_width() / 2, HEIGHT / 2 - label_title.get_height() / 2))
+
+def playing_screen(canvas):
+    for i in range(0, len(asteroids)):
+        canvas.blit(rot_center(planet, asteroids[i].angle), ( asteroids[i].x, asteroids[i].y))
+
+    for i in range(0, len(ship.bullets)):
+        canvas.blit(rot_center(fire, ship.bullets[i].angle), ( ship.bullets[i].x, ship.bullets[i].y))
+
+    canvas.blit(rot_center(ship_sprite, ship.angle), (ship.x, ship.y))
+    canvas.blit(write.render("SCORE: {:n}".format(score), 1, GREEN), (0,0))
+
 def draw(canvas):
     global time
     canvas.fill(BLACK)
@@ -56,15 +74,17 @@ def draw(canvas):
     # canvas.blit(debris, (time*.3,0))
     # canvas.blit(debris, (time*.3 - WIDTH,0))
     time = time + 1
-    
-    for i in range(0, len(asteroids)):
-        canvas.blit(rot_center(planet, asteroids[i].angle), ( asteroids[i].x, asteroids[i].y))
 
-    canvas.blit(rot_center(ship_sprite, ship.angle), (ship.x, ship.y))
+    print(GAME_MANAGER.playing_state)
+
+    if GAME_MANAGER.playing_state == GManager.STATE_START:
+        start_screen(canvas)
+    elif GAME_MANAGER.playing_state == GManager.STATE_PLAYING:
+        playing_screen(canvas)
     
 
 def handle_input():
-    global ship, ship_rotaiting, ship_direction, ship_moving
+    global ship
 
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -73,31 +93,35 @@ def handle_input():
 
         elif event.type == KEYDOWN:
             if event.key == K_LEFT:
-                ship_rotaiting = True
-                ship_direction = 1
+                ship.rotating = True
+                ship.direction = Ship.LEFT
             elif event.key == K_RIGHT:
-                ship_rotaiting = True
-                ship_direction = -1
+                ship.rotating = True
+                ship.direction = Ship.RIGHT
             elif event.key == K_UP:
-                ship_moving = True
+                ship.moving = True
                 ship.speed = current_speed
+            elif event.key == K_SPACE:
+                ship.shooting = True
+            elif event.key == K_DELETE:
+                GAME_MANAGER.playing_state = GManager.STATE_PLAYING
 
         elif event.type == KEYUP:
             if event.key == K_LEFT or event.key == K_RIGHT:
-                ship_rotaiting = False
+                ship.rotating = False
             elif event.key == K_UP:
-                ship_moving = False
+                ship.moving = False
+            elif event.key == K_SPACE:
+                ship.shooting = False
 
-def move_ship():
-    global ship
-    
-    if (ship_rotaiting):
-        ship.angle = ship.angle + ship_direction * ship_rotation_speed
-    if (ship_moving or ship.speed > 0):
-        ship.x = (ship.x + math.cos(math.radians(ship.angle)) * ship.speed)
-        ship.y = (ship.y - math.sin(math.radians(ship.angle)) * ship.speed)
-        if ship_moving == False:
-            ship.speed = ship.speed - .1
+def controll_ship():
+    ship.rotate()
+    ship.move()
+    ship.shoot(BULLET_SPEED)
+
+    for i in range(0, len(ship.bullets)):
+        ship.bullets[i].move()
+
 
 def is_collision(x1, y1, x2, y2):
     distance = math.sqrt(math.pow(x1 - x2, 2) + math.pow(y1 - y2, 2))
@@ -126,11 +150,11 @@ def controll_asteroids():
             asteroids[i].x = WIDTH
 
         if is_collision(asteroids[i].x, asteroids[i].y, ship.x, ship.y):
-            print("GAME OVER")
+            GAME_MANAGER.playing_state = GManager.STATE_GAME_OVER
             # exit()
 
 def game_logic():
-    move_ship()
+    controll_ship()
     controll_asteroids()
 
 def update_screen():
