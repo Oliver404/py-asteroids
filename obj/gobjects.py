@@ -4,7 +4,7 @@ class Ship:
     LEFT = 1
     RIGHT = -1
     DEFAULT_DECELERATION = 1
-    def __init__(self, x, y, size, speed = 0, rotation_speed = 0, angle = 0, deceleration = DEFAULT_DECELERATION, direction = RIGHT, moving = False, rotating = False, shooting = False, bullets = []):
+    def __init__(self, x = 0, y = 0, size = 0, speed = 0, rotation_speed = 0, angle = 0, deceleration = DEFAULT_DECELERATION, direction = RIGHT, moving = False, rotating = False, shooting = False, bullets = []):
         self.x = x
         self.y = y
         self.speed = speed

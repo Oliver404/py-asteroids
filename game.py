@@ -1,9 +1,10 @@
 import pygame, sys, os, random, math
 from pygame.locals import *
-from gobjects import *
+from obj.gobjects import *
 from const import *
 from style import *
 from gmanager import GManager
+from screens import GameScreen
 
 pygame.init()
 fps = pygame.time.Clock()
@@ -13,6 +14,7 @@ GAME_MANAGER = GManager()
 time = 0
 
 # Globals for SHIP
+gscreen = GameScreen()
 ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50, SHIP_SIZE, 0, ROTATION_SPEED)
 
 # Globals for ASTEROIDs
@@ -41,7 +43,7 @@ label_game_over = title.render("GAME OVER", 1, RED)
 
 def reset_game():
     global ship, asteroids
-    ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50, SHIP_SIZE, 0, ROTATION_SPEED)
+    gscreen.ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50, SHIP_SIZE, 0, ROTATION_SPEED)
     asteroids = []
     GAME_MANAGER.playing_state = GManager.STATE_PLAYING
 
@@ -63,10 +65,10 @@ def playing_screen(canvas):
     for i in range(0, len(asteroids)):
         canvas.blit(rot_center(planet, asteroids[i].angle), ( asteroids[i].x, asteroids[i].y))
 
-    for i in range(0, len(ship.bullets)):
-        canvas.blit(rot_center(fire, ship.bullets[i].angle), ( ship.bullets[i].x, ship.bullets[i].y))
+    for i in range(0, len(gscreen.ship.bullets)):
+        canvas.blit(rot_center(fire, gscreen.ship.bullets[i].angle), ( gscreen.ship.bullets[i].x, gscreen.ship.bullets[i].y))
 
-    canvas.blit(rot_center(ship_sprite, ship.angle), (ship.x, ship.y))
+    canvas.blit(rot_center(ship_sprite, gscreen.ship.angle), (gscreen.ship.x, gscreen.ship.y))
     canvas.blit(write.render("SCORE: {:n}".format(GAME_MANAGER.score), 1, GREEN), (0,0))
 
 def game_over_screen(canvas):
@@ -100,35 +102,38 @@ def handle_input():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
+        else:
+            gscreen.handle_input(event)
 
-        elif event.type == KEYDOWN:
-            if event.key == K_LEFT:
-                ship.rotating = True
-                ship.direction = Ship.LEFT
-            elif event.key == K_RIGHT:
-                ship.rotating = True
-                ship.direction = Ship.RIGHT
-            elif event.key == K_UP:
-                ship.moving = True
-                ship.speed = START_SHIP_SPEED
-            elif event.key == K_SPACE:
-                ship.shooting = True
 
-        elif event.type == KEYUP:
-            if event.key == K_LEFT or event.key == K_RIGHT:
-                ship.rotating = False
-            elif event.key == K_UP:
-                ship.moving = False
-            elif event.key == K_SPACE:
-                ship.shooting = False
+        # elif event.type == KEYDOWN:
+        #     if event.key == K_LEFT:
+        #         ship.rotating = True
+        #         ship.direction = Ship.LEFT
+        #     elif event.key == K_RIGHT:
+        #         ship.rotating = True
+        #         ship.direction = Ship.RIGHT
+        #     elif event.key == K_UP:
+        #         ship.moving = True
+        #         ship.speed = START_SHIP_SPEED
+        #     elif event.key == K_SPACE:
+        #         ship.shooting = True
+
+        # elif event.type == KEYUP:
+        #     if event.key == K_LEFT or event.key == K_RIGHT:
+        #         ship.rotating = False
+        #     elif event.key == K_UP:
+        #         ship.moving = False
+        #     elif event.key == K_SPACE:
+        #         ship.shooting = False
 
 def controll_ship():
-    ship.rotate()
-    ship.move()
-    ship.shoot(BULLET_SPEED)
+    gscreen.ship.rotate()
+    gscreen.ship.move()
+    gscreen.ship.shoot(BULLET_SPEED)
 
-    for i in range(0, len(ship.bullets)):
-        ship.bullets[i].move()
+    for i in range(0, len(gscreen.ship.bullets)):
+        gscreen.ship.bullets[i].move()
 
 
 def is_collision(x1, y1, x2, y2):
@@ -157,7 +162,7 @@ def controll_asteroids():
         elif (asteroids[i].x < 0 - 100):
             asteroids[i].x = WIDTH
 
-        if is_collision(asteroids[i].x, asteroids[i].y, ship.x, ship.y):
+        if is_collision(asteroids[i].x, asteroids[i].y, gscreen.ship.x, gscreen.ship.y):
             GAME_MANAGER.playing_state = GManager.STATE_GAME_OVER
 
 def game_logic():
