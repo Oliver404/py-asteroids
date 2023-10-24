@@ -2,22 +2,14 @@ import pygame, sys, os, random, math
 from pygame.locals import *
 from gobjects import *
 from const import *
+from style import *
 from gmanager import GManager
 
 pygame.init()
 fps = pygame.time.Clock()
 GAME_MANAGER = GManager()
 
-#Colors
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-BLACK = (0, 0, 0)
-
-# Globals
-score = 0
-current_speed = 7
+# Global
 time = 0
 
 # Globals for SHIP
@@ -43,7 +35,15 @@ fire = pygame.transform.scale(pygame.image.load(os.path.join('assets', 'img', 'f
 title = pygame.font.SysFont('Consolas', 96, True)
 write = pygame.font.SysFont('Consolas', 24, True)
 
-label_title = title.render("ASTEROIDS".format(score), 1, GREEN)
+label_title = title.render("ASTEROIDS", 1, GREEN)
+label_press_key = write.render("Press any key", 1, GREEN)
+label_game_over = title.render("GAME OVER", 1, RED)
+
+def reset_game():
+    global ship, asteroids
+    ship = Ship(WIDTH / 2 - 50, HEIGHT / 2 - 50, SHIP_SIZE, 0, ROTATION_SPEED)
+    asteroids = []
+    GAME_MANAGER.playing_state = GManager.STATE_PLAYING
 
 def rot_center(image, angle):
     orig_rect = image.get_rect()
@@ -56,6 +56,8 @@ def rot_center(image, angle):
 
 def start_screen(canvas):
     canvas.blit(label_title, (WIDTH / 2 - label_title.get_width() / 2, HEIGHT / 2 - label_title.get_height() / 2))
+    if GAME_MANAGER.time % 60 in range(0, 40):
+        canvas.blit(label_press_key, (WIDTH / 2 - label_press_key.get_width() / 2, HEIGHT / 2 - label_press_key.get_height() / 2 + label_title.get_height() / 2))
 
 def playing_screen(canvas):
     for i in range(0, len(asteroids)):
@@ -65,23 +67,31 @@ def playing_screen(canvas):
         canvas.blit(rot_center(fire, ship.bullets[i].angle), ( ship.bullets[i].x, ship.bullets[i].y))
 
     canvas.blit(rot_center(ship_sprite, ship.angle), (ship.x, ship.y))
-    canvas.blit(write.render("SCORE: {:n}".format(score), 1, GREEN), (0,0))
+    canvas.blit(write.render("SCORE: {:n}".format(GAME_MANAGER.score), 1, GREEN), (0,0))
+
+def game_over_screen(canvas):
+    canvas.blit(label_game_over, (WIDTH / 2 - label_game_over.get_width() / 2, HEIGHT / 2 - label_game_over.get_height() / 2))
 
 def draw(canvas):
-    global time
     canvas.fill(BLACK)
     # canvas.blit(bg, (0, 0))
     # canvas.blit(debris, (time*.3,0))
     # canvas.blit(debris, (time*.3 - WIDTH,0))
-    time = time + 1
-
-    print(GAME_MANAGER.playing_state)
+    GAME_MANAGER.tiktak()
 
     if GAME_MANAGER.playing_state == GManager.STATE_START:
         start_screen(canvas)
     elif GAME_MANAGER.playing_state == GManager.STATE_PLAYING:
         playing_screen(canvas)
+    elif GAME_MANAGER.playing_state == GManager.STATE_GAME_OVER:
+        game_over_screen(canvas)
     
+
+def ss_handle_input():
+    for event in pygame.event.get():
+        if event.type == KEYUP:
+            reset_game()
+
 
 def handle_input():
     global ship
@@ -100,11 +110,9 @@ def handle_input():
                 ship.direction = Ship.RIGHT
             elif event.key == K_UP:
                 ship.moving = True
-                ship.speed = current_speed
+                ship.speed = START_SHIP_SPEED
             elif event.key == K_SPACE:
                 ship.shooting = True
-            elif event.key == K_DELETE:
-                GAME_MANAGER.playing_state = GManager.STATE_PLAYING
 
         elif event.type == KEYUP:
             if event.key == K_LEFT or event.key == K_RIGHT:
@@ -129,12 +137,12 @@ def is_collision(x1, y1, x2, y2):
     return distance < DISTANCE_COLLISION
 
 def create_asteroid():
-    if time % time_create_asteroid == 0 and time > 0:
-        asteroid = Asteroid(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(0, 365), asteroid_speed)
-        asteroids.append(asteroid)
+    asteroid = Asteroid(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(0, 365), asteroid_speed)
+    asteroids.append(asteroid)
 
 def controll_asteroids():
-    create_asteroid()
+    if GAME_MANAGER.time % time_create_asteroid == 0 and GAME_MANAGER.time > 0 and len(asteroids) < GAME_MANAGER.max_asteroids:
+        create_asteroid()
 
     for i in range(0, len(asteroids)):
         asteroids[i].move()
@@ -151,7 +159,6 @@ def controll_asteroids():
 
         if is_collision(asteroids[i].x, asteroids[i].y, ship.x, ship.y):
             GAME_MANAGER.playing_state = GManager.STATE_GAME_OVER
-            # exit()
 
 def game_logic():
     controll_ship()
@@ -161,10 +168,16 @@ def update_screen():
     pygame.display.update()
     fps.tick(60)
 
-
 # Asteroids game loop
 while True:
     draw(window)
-    handle_input()
-    game_logic()
+
+    if GAME_MANAGER.playing_state == GManager.STATE_START:
+        ss_handle_input()
+    elif GAME_MANAGER.playing_state == GManager.STATE_PLAYING:
+        handle_input()
+        game_logic()
+    elif GAME_MANAGER.playing_state == GManager.STATE_GAME_OVER:
+        ss_handle_input()
+
     update_screen()
