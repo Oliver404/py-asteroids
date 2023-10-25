@@ -5,9 +5,12 @@ from obj.gobjects import Ship, Asteroid
 from const import *
 from g_utils import is_collision, rot_center
 from assets import *
+from gmanager import GManager
+
 class GScreen:
-    def __init__(self) -> None:
+    def __init__(self, gmanager: GManager) -> None:
         self. time = 0
+        self.gmanager = gmanager
 
     @abstractclassmethod
     def handle_input(self, event):
@@ -23,11 +26,11 @@ class TitleScreen(GScreen):
     
     def handle_input(self, event):
         if event.type == KEYUP:
-            pass
+            self.gmanager.on(GManager.START_GAME)
+            
 
     def logic(self):
         super().logic()
-        print("Title Screen Logic")
 
     def draw(self, canvas):
         super().draw(canvas)
@@ -39,11 +42,10 @@ class OverScreen(GScreen):
     
     def handle_input(self, event):
         if event.type == KEYUP:
-            pass
+            self.gmanager.on(GManager.START_GAME)
 
     def logic(self):
         super().logic()
-        print("Over Screen Logic")
 
     def draw(self, canvas):
         super().draw(canvas)
@@ -55,8 +57,8 @@ class GameScreen(GScreen):
     time_create_asteroid = 21
     asteroid_speed = 2
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, gmanager: GManager) -> None:
+        super().__init__(gmanager)
         self.ship = Ship()
         self.asteroids = []
         self.score = 0
@@ -141,6 +143,4 @@ class GameScreen(GScreen):
                 self.asteroids[i].x = WIDTH
 
             if is_collision(self.asteroids[i].x, self.asteroids[i].y, self.ship.x, self.ship.y, DISTANCE_COLLISION):
-                # TODO: Delete print and add logic  
-                # GAME_MANAGER.playing_state = GManager.STATE_GAME_OVER
-                print("GameOver")
+                self.gmanager.on(GManager.GAME_OVER)
