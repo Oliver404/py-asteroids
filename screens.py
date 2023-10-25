@@ -16,9 +16,8 @@ class GScreen:
     def logic(self):
         self.time += 1
 
-    @abstractclassmethod
     def draw(self, canvas):
-        pass
+        canvas.fill(BLACK)
 
 class TitleScreen(GScreen):
     
@@ -27,10 +26,11 @@ class TitleScreen(GScreen):
             pass
 
     def logic(self):
-        super().login()
+        super().logic()
         print("Title Screen Logic")
 
     def draw(self, canvas):
+        super().draw(canvas)
         canvas.blit(label_title, (WIDTH / 2 - label_title.get_width() / 2, HEIGHT / 2 - label_title.get_height() / 2))
         if self.time % 60 in range(0, 40):
             canvas.blit(label_press_key, (WIDTH / 2 - label_press_key.get_width() / 2, HEIGHT / 2 - label_press_key.get_height() / 2 + label_title.get_height() / 2))
@@ -42,10 +42,11 @@ class OverScreen(GScreen):
             pass
 
     def logic(self):
-        super().login()
+        super().logic()
         print("Over Screen Logic")
 
     def draw(self, canvas):
+        super().draw(canvas)
         canvas.blit(label_game_over, (WIDTH / 2 - label_game_over.get_width() / 2, HEIGHT / 2 - label_game_over.get_height() / 2))
 
 class GameScreen(GScreen):
@@ -89,6 +90,11 @@ class GameScreen(GScreen):
         self.controll_asteroids()
 
     def draw(self, canvas):
+        super().draw(canvas)
+        # canvas.blit(bg, (0, 0))
+        # canvas.blit(debris, (time*.3,0))
+        # canvas.blit(debris, (time*.3 - WIDTH,0))
+
         for i in range(0, len(self.asteroids)):
             canvas.blit(rot_center(planet, self.asteroids[i].angle), ( self.asteroids[i].x, self.asteroids[i].y))
 
@@ -135,6 +141,6 @@ class GameScreen(GScreen):
                 self.asteroids[i].x = WIDTH
 
             if is_collision(self.asteroids[i].x, self.asteroids[i].y, self.ship.x, self.ship.y, DISTANCE_COLLISION):
-                # TODO: Delete print and add login  
+                # TODO: Delete print and add logic  
                 # GAME_MANAGER.playing_state = GManager.STATE_GAME_OVER
                 print("GameOver")

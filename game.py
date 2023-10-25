@@ -11,35 +11,19 @@ fps = pygame.time.Clock()
 GAME_MANAGER = GManager()
 
 # Screens
-tscreen = TitleScreen()
-gscreen = GameScreen()
-oscreen = OverScreen()
+screen = TitleScreen()
 
 # Canvas declaration
 window = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32 )
 pygame.display.set_caption('Asteroids')
-
-
-def draw(canvas):
-    canvas.fill(BLACK)
-    # canvas.blit(bg, (0, 0))
-    # canvas.blit(debris, (time*.3,0))
-    # canvas.blit(debris, (time*.3 - WIDTH,0))
-    GAME_MANAGER.tiktak()
-
-    if GAME_MANAGER.playing_state == GManager.STATE_START:
-        start_screen(canvas)
-    elif GAME_MANAGER.playing_state == GManager.STATE_PLAYING:
-        playing_screen(canvas)
-    elif GAME_MANAGER.playing_state == GManager.STATE_GAME_OVER:
-        game_over_screen(canvas)
     
-
 def ss_handle_input():
+    global screen
     for event in pygame.event.get():
         if event.type == KEYUP:
             GAME_MANAGER.playing_state = GManager.STATE_PLAYING
-            gscreen.reset_game()
+            screen = GameScreen()
+            screen.reset_game()
 
 
 def handle_input():
@@ -50,7 +34,7 @@ def handle_input():
             pygame.quit()
             sys.exit()
         else:
-            gscreen.handle_input(event)
+            screen.handle_input(event)
 
 def update_screen():
     pygame.display.update()
@@ -60,15 +44,17 @@ def update_screen():
 while True:
     # draw(window)
 
+    screen.draw(window)
+    
     if GAME_MANAGER.playing_state == GManager.STATE_START:
-        tscreen.draw(window)
         ss_handle_input()
     elif GAME_MANAGER.playing_state == GManager.STATE_PLAYING:
-        gscreen.draw(window)
+        # gscreen.draw(window)
         handle_input()
-        gscreen.logic()
     elif GAME_MANAGER.playing_state == GManager.STATE_GAME_OVER:
-        oscreen.draw(window)
+        # oscreen.draw(window)
         ss_handle_input()
+    
+    screen.logic()
 
     update_screen()
