@@ -34,11 +34,12 @@ class Ship:
             self.bullets.append(Bullet(self.x + 45, self.y + 45, self.angle, speed))
 
 class Asteroid:
-    def __init__(self, x, y, angle, speed):
+    def __init__(self, x, y, angle, speed, size):
         self.x = x
         self.y = y
         self.angle = angle
         self.speed = speed
+        self.size = size
 
     def move(self):
         self.x = (self.x + math.cos(math.radians(self.angle)) * self.speed)

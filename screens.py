@@ -3,7 +3,7 @@ from pygame.locals import *
 from abc import ABC, abstractclassmethod
 from obj.gobjects import Ship, Asteroid
 from const import *
-from g_utils import is_collision, rot_center
+from g_utils import is_collision, rot_center, scale
 from assets import *
 from gmanager import GManager
 
@@ -62,6 +62,8 @@ class GameScreen(GScreen):
         self.ship = Ship()
         self.asteroids = []
         self.score = 0
+        self.min_asteroid_size = 40
+        self.max_asteroid_size = 100
 
     def handle_input(self, event):
         if event.type == KEYDOWN:
@@ -85,10 +87,10 @@ class GameScreen(GScreen):
             elif event.key == K_SPACE:
                 self.ship.shooting = False
 
-
     def logic(self):
         self.time += 1
         self.controll_ship()
+        self.verify_collisions()
         self.controll_asteroids()
 
     def draw(self, canvas):
@@ -98,7 +100,7 @@ class GameScreen(GScreen):
         # canvas.blit(debris, (time*.3 - WIDTH,0))
 
         for i in range(0, len(self.asteroids)):
-            canvas.blit(rot_center(planet, self.asteroids[i].angle), ( self.asteroids[i].x, self.asteroids[i].y))
+            canvas.blit(rot_center(scale(planet, self.asteroids[i].size), self.asteroids[i].angle), ( self.asteroids[i].x, self.asteroids[i].y))
 
         for i in range(0, len(self.ship.bullets)):
             canvas.blit(rot_center(fire, self.ship.bullets[i].angle), ( self.ship.bullets[i].x, self.ship.bullets[i].y))
@@ -114,7 +116,13 @@ class GameScreen(GScreen):
         # GAME_MANAGER.playing_state = GManager.STATE_PLAYING
 
     def create_asteroid(self):
-        asteroid = Asteroid(random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(0, 365), GameScreen.asteroid_speed)
+        asteroid = Asteroid(
+                random.randint(0, WIDTH), 
+                random.randint(0, HEIGHT), 
+                random.randint(0, 365), 
+                GameScreen.asteroid_speed, 
+                random.randint(self.min_asteroid_size, self.max_asteroid_size)
+            )
         self.asteroids.append(asteroid)
 
     def controll_ship(self):
@@ -142,5 +150,14 @@ class GameScreen(GScreen):
             elif (self.asteroids[i].x < 0 - 100):
                 self.asteroids[i].x = WIDTH
 
-            if is_collision(self.asteroids[i].x, self.asteroids[i].y, self.ship.x, self.ship.y, DISTANCE_COLLISION):
-                self.gmanager.on(GManager.GAME_OVER)
+    def verify_collisions(self):     
+        asteroids_distroyed = []
+        for i in range(0, len(self.asteroids)):
+            if is_collision(self.asteroids[i].x, self.asteroids[i].y, self.asteroids[i].size, self.ship.x, self.ship.y, 100, DISTANCE_COLLISION):
+                    self.gmanager.on(GManager.GAME_OVER)
+            for j in range(0, len(self.ship.bullets)):
+                if is_collision(self.asteroids[i].x, self.asteroids[i].y, self.asteroids[i].size, self.ship.bullets[j].x, self.ship.bullets[j].y, 10, DISTANCE_COLLISION):
+                    asteroids_distroyed.append(i)
+
+        for i in range(0, len(asteroids_distroyed)):
+            self.asteroids.pop(asteroids_distroyed[i] - i)

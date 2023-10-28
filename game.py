@@ -9,8 +9,6 @@ from screens import GScreen, TitleScreen, GameScreen, OverScreen
 pygame.init()
 fps = pygame.time.Clock()
 
-
-
 # Canvas declaration
 window = pygame.display.set_mode((WIDTH, HEIGHT), 0, 32 )
 pygame.display.set_caption('Asteroids')
